@@ -33,7 +33,7 @@ function SideBar() {
       {/* Header Section */}
       <div>
         <div className="text-center mb-16">
-          <h2 className="text-2xl font-bold text-purple-700 tracking-widest">CryptoBoard</h2>
+          <h2 className="text-2xl font-bold text-purple-700 tracking-widest">Menu Board</h2>
         </div>
         <nav className="space-y-4">
           {menuItems.map(({ name, icon }) => (

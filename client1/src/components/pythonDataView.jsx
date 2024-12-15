@@ -1,7 +1,7 @@
 
 function PythonDataViewer({ data }) {
     return (
-      <div className="border rounded p-4 bg-white shadow-lg w-1/3">
+      <div className="border rounded p-4 bg-white shadow-lg w-1/3 max-h-96">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Python Data</h3>
         {data && Object.keys(data).length > 0 ? (
           <div>

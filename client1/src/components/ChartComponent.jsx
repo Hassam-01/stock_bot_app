@@ -21,98 +21,115 @@ ChartJS.register(
   Legend
 );
 
-function ChartComponent({ data, tradeDetails }) {
-  // State to toggle dataset visibility
-  const [visibility, setVisibility] = useState({
-    closingPrices: true,
-    volumes: true,
-    tradePrice: true,
-  });
+function ChartComponent({ data, fiveDaysTrendData }) {
+  const [currentChart, setCurrentChart] = useState('closingPrices'); // State to toggle between datasets
+
   // Validate timestamps and format dates
   const labels = data.map((entry) => {
-    console.log("Value:", entry.timestamp, "Type:", typeof entry.timestamp);
-  
-    // Ensure timestamp is a valid date
     const timestamp = Date.parse(entry.timestamp); // Parse ISO string to a valid timestamp
-    console.log("Parsed Timestamp:", timestamp);
-  
     return !isNaN(timestamp)
       ? new Date(timestamp).toLocaleString('en-US', { day: 'numeric', month: 'short' }) // Format to 'day month' (e.g., 5 Dec)
       : 'Invalid Timestamp';
   });
-  // Prepare datasets based on visibility state
-  const closingPrices = data.map((entry) => entry.closing || null);
+
+  // Five days trend labels
+  const fiveDaysLabels = fiveDaysTrendData.map((entry) => {
+    const timestamp = Date.parse(entry.timestamp);
+    return !isNaN(timestamp)
+      ? new Date(timestamp).toLocaleString('en-US', { day: 'numeric', month: 'short' })
+      : 'Invalid Timestamp';
+  });
+
+  // Prepare datasets for Closing Prices, Volume, and Five Days Trend
+  const closingPrices = data.map((entry) => entry.close || null);
   const volumes = data.map((entry) => entry.volume || null);
+  const fiveDaysTrend = fiveDaysTrendData.map((entry) => entry.close || null);
 
-  const datasets = [];
-
-  if (visibility.closingPrices) {
-    datasets.push({
+  const datasets = {
+    closingPrices: {
       label: 'Closing Prices',
       data: closingPrices,
-      borderColor: 'rgba(75, 192, 192, 1)',
-      backgroundColor: 'rgba(75, 192, 192, 0.2)',
-    });
-  }
-
-  if (visibility.volumes) {
-    datasets.push({
+      borderColor: 'rgba(128, 90, 213, 1)',
+      backgroundColor: 'rgba(128, 90, 213, 0.2)',
+    },
+    volumes: {
       label: 'Volume',
       data: volumes,
-      borderColor: 'rgba(54, 162, 235, 1)',
-      backgroundColor: 'rgba(54, 162, 235, 0.2)',
-    });
-  }
-
-  if (visibility.tradePrice && tradeDetails) {
-    const tradeIndex = data.findIndex(
-      (entry) =>
-        new Date(entry.timestamp * 1000).toDateString() === tradeDetails.date
-    );
-
-    datasets.push({
-      label: 'Trade Price',
-      data: new Array(data.length).fill(null).map((_, idx) =>
-        idx === tradeIndex ? tradeDetails.price : null
-      ),
-      borderColor: 'rgba(255, 159, 64, 1)',
-      pointRadius: 5,
-      pointBackgroundColor: 'rgba(255, 159, 64, 1)',
-      fill: false,
-    });
-  }
-
-  const chartData = {
-    labels,
-    datasets,
+      borderColor: 'rgba(94, 53, 177, 1)',
+      backgroundColor: 'rgba(94, 53, 177, 0.2)',
+    },
+    fiveDaysTrend: {
+      label: '5 Days Trend',
+      data: fiveDaysTrend,
+      borderColor: 'rgba(94, 53, 177, 1)',
+      backgroundColor: 'rgba(94, 53, 177, 0.2)',
+    },
   };
 
-  // Chart options with dynamic legend toggling
+  const chartData = {
+    labels: currentChart === 'fiveDaysTrend' ? fiveDaysLabels : labels,
+    datasets: [datasets[currentChart]],
+  };
+
+  // Chart options
   const options = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top',
-        onClick: (e, legendItem) => {
-          const label = legendItem.text;
-          setVisibility((prev) => ({
-            ...prev,
-            closingPrices: label === 'Closing Prices' ? !prev.closingPrices : prev.closingPrices,
-            volumes: label === 'Volume' ? !prev.volumes : prev.volumes,
-            tradePrice: label === 'Trade Price' ? !prev.tradePrice : prev.tradePrice,
-          }));
-        },
-      },
       title: {
         display: true,
         text: 'Stock Data Chart',
+        color: 'gray',
+        font: {
+          size: 18,
+        },
+      },
+      legend: {
+        labels: {
+          color: '#000',
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: '#000',
+        },
+      },
+      y: {
+        ticks: {
+          color: '#000',
+        },
       },
     },
   };
 
+  const chartOptions = [
+    { value: 'closingPrices', label: 'Closing Prices' },
+    { value: 'volumes', label: 'Volume' },
+    { value: 'fiveDaysTrend', label: '5 Days Trend' },
+  ];
+
   return (
-    <div className="h-64">
-      <Line data={chartData} options={options} />
+    <div className="p-4 bg-white shadow-lg rounded-md">
+      <div className="h-64 mb-6">
+        <Line data={chartData} options={options} />
+      </div>
+
+      <div className="flex justify-center flex-wrap gap-4">
+        {chartOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => setCurrentChart(option.value)}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
+              currentChart === option.value
+                ? 'bg-purple-600 text-white'
+                : 'bg-purple-200 text-purple-800 hover:bg-purple-300'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
