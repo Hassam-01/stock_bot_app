@@ -80,7 +80,7 @@ function ChartComponent({ data, fiveDaysTrendData }) {
         text: 'Stock Data Chart',
         color: 'gray',
         font: {
-          size: 18,
+          size: 16,
         },
       },
       legend: {

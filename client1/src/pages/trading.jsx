@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "../components/sideBar";
+import AssetOverview from "../components/assetOverview";
 import axios from "axios";
 import {
   Chart as ChartJS,
@@ -15,6 +16,9 @@ import {
 } from "chart.js";
 import PythonDataViewer from "../components/pythonDataView";
 import ChartComponent from "../components/ChartComponent";
+import { useDispatch, useSelector } from "react-redux";
+import { setDashboardData } from "../features/dashboard/dashboardSlice";
+import TradeBar from "../components/tradeBar";
 
 ChartJS.register(
   CategoryScale,
@@ -34,10 +38,60 @@ function Trading() {
   const [fivedaystrend, setFiveDaysTrend] = useState([]);
   const [tradeDetails, setTradeDetails] = useState({ date: "", price: "" });
 
+  const dataAssets = useSelector((state) => state.dashboard.assets); // all the data of of assets
+  const balance = useSelector((state) => state.dashboard.balance); // 
+  const dispatch = useDispatch();
+
   const isValidTicker = (ticker) => {
     const regex = /^[A-Z]{1,5}$/;
     return regex.test(ticker);
   };
+
+  // const makeTrade = (signal, ticker, trade_date, trade_price) => {
+  //   if (signal === "BUY") {
+  //     const asset = dataAssets.find((asset) => asset.ticker === ticker);
+  //     // if (asset) {
+  //       const newBalance = balance - trade_price;
+  //       dispatch(
+  //         setDashboardData({
+  //           ...dataAssets,
+  //           balance: newBalance,
+  //           activities: [
+  //             ...dataAssets.activities,
+  //             {
+  //               activity: "BUY",
+  //               ticker,
+  //               quantity: 1,
+  //               price: trade_price,
+  //               date: trade_date,
+  //             },
+  //           ],
+  //         })
+  //       );
+  //     // }
+  //   } else if (signal === "SELL") {
+  //     const asset = dataAssets.find((asset) => asset.ticker === ticker);
+  //     if (asset) {
+  //       const newBalance = balance + trade_price;
+  //       dispatch(
+  //         setDashboardData({
+  //           ...dataAssets,
+  //           balance: newBalance,
+  //           activities: [
+  //             ...dataAssets.activities,
+  //             {
+  //               activity: "SELL",
+  //               ticker,
+  //               quantity: 1,
+  //               price: trade_price,
+  //               date: trade_date,
+  //             },
+  //           ],
+  //         })
+  //       );
+  //     }
+  //   }
+  // };
 
   const handleGetRecommendation = async () => {
     const upperTicker = ticker.toUpperCase();
@@ -63,19 +117,33 @@ function Trading() {
         response.data;
 
       setRecommendation(signal);
+      // makeTrade(signal, upperTicker, trade_date, trade_price);
       setPredictionData(predictionData);
       setPythonData(pythonData);
       setTradeDetails({ date: trade_date, price: trade_price });
       setFiveDaysTrend(five_days_trend_data);
       toast.success("Recommendation fetched successfully!");
+      console.log("dataAssets", dataAssets);
+      console.log("balance", balance);
     } catch (err) {
       console.error("Error fetching recommendation:", err);
       toast.error("Failed to fetch recommendation. Please try again later.");
     }
   };
 
+  const filteredAssets = Array.isArray(dataAssets)
+  ? dataAssets
+      .filter((assetGroup) => assetGroup.ticker === ticker) // Find the relevant ticker
+      .flatMap((assetGroup) => 
+        assetGroup.assets.map((individualAsset) => ({
+          name: assetGroup.ticker, // Use the ticker as the name
+          price: individualAsset.price || 'N/A', // Extract price
+          quantity: individualAsset.quantity || 'N/A', // Extract quantity
+        }))
+      )
+  : [];
   return (
-    <div className="trading-container bg-purple-50 h-screen flex p-8">
+    <div className="trading-container bg-purple-50 h-screen flex p-4">
       <ToastContainer />
       <div className="flex gap-8 w-full ">
         <Sidebar className="h-full" />
@@ -84,12 +152,9 @@ function Trading() {
           <header className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">Trading</h1>
           </header>
-          <div className="flex w-[90%] justify-between">
-            <section className="mb-8 flex gap-8 flex-col justify-between">
+          <div className="flex w-[90%] justify-between flex-col">
+            <section className="mb-8 flex gap-8  justify-between">
               <div className="w-2/3">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                  Get Recommendation
-                </h2>
                 <div className="flex gap-4 items-center">
                   <input
                     type="text"
@@ -108,7 +173,7 @@ function Trading() {
                 <div className="flex gap-5 min-w-max">
                   {recommendation && (
                     <div
-                      className={`mt-4 text-lg font-medium flex gap-1 ${
+                      className={`mt-4 text-lg font-semibold flex gap-1 ${
                         recommendation.toLowerCase() === "buy"
                           ? "text-green-600"
                           : recommendation.toLowerCase() === "sell"
@@ -128,7 +193,17 @@ function Trading() {
                   )}
                 </div>
               </div>
+
+              {/* a component assetOverView of asset owned if any for the entered ticker */}
+              {/* from dataAssets filter the stocks of the type ticker and send them to Assetoverview */}
+            <AssetOverview assets={filteredAssets} />
+              </section>
+
+              <div className="flex items-center gap-4 -mt-4">
+
               {/* Prediction Graphs */}
+              <div>
+
               {predictionData && (
                 <section className="mb-8">
                   <h2 className="text-xl font-semibold text-gray-700 mb-4">
@@ -138,21 +213,15 @@ function Trading() {
                     data={predictionData}
                     tradeDetails={tradeDetails}
                     fiveDaysTrendData={fivedaystrend}
-                  />
+                    />
                 </section>
               )}
-            </section>
+              </div>
             <PythonDataViewer data={pythonData} />
+            <TradeBar/>
+              </div>
           </div>
 
-          {/* Trend Graph */}
-          {/* <section className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Asset Trends</h2>
-            <ChartComponent
-              data={{ dates: trends.t, closing: trends.c }}
-              tradeDetails={null}
-            />
-          </section> */}
         </main>
       </div>
     </div>

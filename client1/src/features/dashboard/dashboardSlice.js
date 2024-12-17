@@ -6,7 +6,7 @@ const dashboardSlice = createSlice({
     assets: [], // Changed to an object where each ticker is a key
     activities: [], // Transaction logs
     balance: 0, // Total balance of present stock
-    joined: "",
+    joined: "", // date of creating profile
   },
   reducers: {
     setDashboardData: (state, action) => {

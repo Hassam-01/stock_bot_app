@@ -22,6 +22,7 @@ useEffect(() => {
       // assets is an array of object with tickers as keys: assets = { 'AAPL': { price: 123.45, stock_id: 1, quantity: 10, date: '2022-03-15' }, ... }
       const assets = response.data.assets || []; // Default to an empty array if not present
       dispatch(setDashboardData({ ...response.data, assets }));
+      console.log("From home: ", response.data);
     } catch (err) {
       console.error(err);
     }
@@ -32,10 +33,10 @@ useEffect(() => {
 }, [userId, dispatch]);  // Added userId to the dependency array to re-fetch if it changes
 
   // getting from states  
-  const dataAssets = useSelector((state) => state.dashboard.assets);
-  const date = useSelector((state) => state.dashboard.joined);
-  const balance = useSelector((state) => state.dashboard.balance);
-  const userActivities = useSelector((state) => state.dashboard.activities);
+  const dataAssets = useSelector((state) => state.dashboard.assets); // all the data of of assets
+  const balance = useSelector((state) => state.dashboard.balance); // 
+  const date = useSelector((state) => state.dashboard.joined); // date of making profile
+  const userActivities = useSelector((state) => state.dashboard.activities); 
   const username = useSelector((state) => state.username.username);
   // const username = 'Hassam Ali';
   // from the assets, filter unique tickers assets.ticker

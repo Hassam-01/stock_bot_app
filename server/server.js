@@ -53,7 +53,6 @@ app.post('/api/recommendation', async (req, res) => {
     res.status(500).send('Error communicating with FastAPI');
   }
 });
-// test line
 
 app.post('/api/auth/register', async (req, res) => {
   const { username, password, email } = req.body;
@@ -69,6 +68,43 @@ app.post('/api/auth/register', async (req, res) => {
 
     // Return a success response with the user details
     return res.status(201).json({ message: 'User Registered Successfully', username: user.username, user_id: user.user_id });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Something went wrong' });
+  }
+});
+// -- making a trade
+// -- if stock exits in stocks take the stock id else make an entry and take stock id
+// -- then go to price table and make an entry their take price id
+// -- go to assets and enter the price id, stock id, quantity, user id
+// -- go to transactions enter useridm stock id, type, quantity, price
+
+app.post('/api/trade', async (req, res) => {
+  const { user_id, quantity, transaction_type } = req.body;
+  const { ticker, price } = req.body;
+  // Check if the user exists
+  const user = await db('users').where({ user_id }).first();
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  try {
+    // Check if the stock exists
+    let [stock] = await db('stocks').where({ ticker });
+    // If the stock does not exist, insert it
+    if (!stock) {
+      [stock] = await db('stocks').insert({ ticker, company_name: ticker }).returning('*');
+    }
+    // insert the price for the stock_id and get the price_id
+    const [stockPrice] = await db('stock_prices').insert({ stock_id: stock.stock_id, price }).returning('*');
+    // Insert the asset
+    await db('assets').insert({ user_id, stock_id: stock.stock_id, price_id: stockPrice.price_id, quantity });
+    
+    // Insert the transaction
+    await db('transactions').insert({ user_id, stock_id, price_id, quantity, transaction_type });
+    // Update the user's balance
+    await db('users').where({ user_id }).increment('total_investment', quantity);
+    // Return a success response
+    return res.status(201).json({ message: 'Trade Successful' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Something went wrong' });
