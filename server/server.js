@@ -16,6 +16,7 @@ app.use(cors(
 ));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.post('/api/auth/login', async (req, res) => {
   // we recieve the username and password from the client
@@ -73,15 +74,72 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(500).json({ message: 'Something went wrong' });
   }
 });
-// -- making a trade
-// -- if stock exits in stocks take the stock id else make an entry and take stock id
-// -- then go to price table and make an entry their take price id
-// -- go to assets and enter the price id, stock id, quantity, user id
-// -- go to transactions enter useridm stock id, type, quantity, price
 
-app.post('/api/trade', async (req, res) => {
-  const { user_id, quantity, transaction_type } = req.body;
-  const { ticker, price } = req.body;
+app.post('/api/trade/:user_id/buy', async (req, res) => {
+  // ! ---------------------------------------------------------------------------------
+  // -- making a trade 
+  // -- if stock exits in stocks take the stock id else make an entry and take stock id
+  // -- then go to price table and make an entry their take price id
+  // -- go to assets and enter the price id, stock id, quantity, user id
+  // -- go to transactions enter useridm stock id, type, quantity, price
+  // ! ---------------------------------------------------------------------------------
+  const { price, quantity, date, signal, ticker } = req.body.dataSend;
+  const user_id = req.params.user_id;
+  const transaction_type = 'buy';
+  // Check if the user exists
+  const user = await db('users').where({ user_id }).first();
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  try {
+    // Check if the stock exists
+    if (!ticker) {
+      return res.status(400).json({ message: 'Ticker is required' });
+    }
+    let [stock] = await db('stocks').where({ ticker });
+    // If the stock does not exist, insert it
+    if (!stock) {
+      [stock] = await db('stocks').insert({ ticker, company_name: ticker }).returning('*');
+    }
+    // Insert the price for the stock_id and get the price_id
+    const [stockPrice] = await db('stock_prices').insert({ stock_id: stock.stock_id, price, price_date:date }).returning('*');
+    // Insert the asset
+    await db('assets').insert({ user_id, stock_id: stock.stock_id, price_id: stockPrice.price_id, quantity });
+    // Insert the transaction
+    await db('transactions').insert({ user_id, stock_id: stock.stock_id, transaction_type, quantity, price,transaction_date: date });
+    await db('users').where({ user_id }).decrement('total_investment', quantity * price);
+    // Return a success response
+    return res.status(201).json({ message: 'Buy Trade Successful' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Something went wrong' });
+  }
+});
+
+
+
+app.post('/api/trade/:user_id/sell', async (req, res) => {
+  // ! ---------------------------------------------------------------------------------
+  // for sell first we check and verify if the stock exists in the stocks table // * done
+  // then we check if the user exists  // * done
+  // then we insert the price for the stock_id and get the price_id // * done
+  // then we insert the transaction // * done
+  // then we go to assets find the assets and update the quantity (using price_id and stock_id) // * done
+  // if the quantity is 0, we delete the asset // * done 
+  // then we update the user's balance // * done
+  // ! ----------------------------------------------------------------------------------
+  const {
+    sellPrice: price,
+    sellQuantity: quantity,
+    sellDate: date,
+    sellTicker: ticker,
+    sellSignal: signal,
+    sellStockId: stock_id,
+    sellPriceId: price_id
+  } = req.body.dataSend[0];
+  const user_id = req.params.user_id;
+
+  const transaction_type = 'sell';
   // Check if the user exists
   const user = await db('users').where({ user_id }).first();
   if (!user) {
@@ -94,21 +152,26 @@ app.post('/api/trade', async (req, res) => {
     if (!stock) {
       [stock] = await db('stocks').insert({ ticker, company_name: ticker }).returning('*');
     }
-    // insert the price for the stock_id and get the price_id
-    const [stockPrice] = await db('stock_prices').insert({ stock_id: stock.stock_id, price }).returning('*');
-    // Insert the asset
-    await db('assets').insert({ user_id, stock_id: stock.stock_id, price_id: stockPrice.price_id, quantity });
-    
+    // Insert the price for the stock_id and get the price_id
+    const [priceData] = await db('stock_prices').where({ price_id }).returning('*');
+    // const price_id = priceData.price_id;
+    const buy_price = priceData.price;
     // Insert the transaction
-    await db('transactions').insert({ user_id, stock_id, price_id, quantity, transaction_type });
+    await db('transactions').insert({ user_id, stock_id: stock_id, price, quantity, transaction_type, transaction_date: date });
     // Update the user's balance
-    await db('users').where({ user_id }).increment('total_investment', quantity);
+    await db("assets").where({ user_id, stock_id,price_id }).decrement('quantity', quantity);
+    // go to user+portfolio and update the sell_price and for the price_id stock_id and user_id
+    await db('user_portfolio').insert({ user_id, stock_id, buy_price, sell_price: price,  price_id, sell_quantity: quantity, sell_date: date });
     // Return a success response
-    return res.status(201).json({ message: 'Trade Successful' });
+    return res.status(201).json({ message: 'Sell Trade Successful' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Something went wrong' });
   }
+// for now: transactions taable updated 
+
+
+
 });
 
 app.get("/api/dashboard/:user_id", async (req, res) => {
@@ -155,13 +218,11 @@ app.get("/api/dashboard/:user_id", async (req, res) => {
       .select('total_investment', 'total_profit_loss')
       .where({ user_id })
       .first();
-    // console.log(activities);
     // Return the user's data
     const transformedAssetsArray = Object.keys(transformedAssets).map((ticker) => ({
       ticker,
       assets: transformedAssets[ticker],
     }));
-    // console.log(typeof transformedAssetsArray);
     return res.status(200).json({
       transformedAssets : transformedAssetsArray,
       activities,

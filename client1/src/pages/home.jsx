@@ -22,7 +22,6 @@ useEffect(() => {
       // assets is an array of object with tickers as keys: assets = { 'AAPL': { price: 123.45, stock_id: 1, quantity: 10, date: '2022-03-15' }, ... }
       const assets = response.data.assets || []; // Default to an empty array if not present
       dispatch(setDashboardData({ ...response.data, assets }));
-      console.log("From home: ", response.data);
     } catch (err) {
       console.error(err);
     }

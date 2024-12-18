@@ -16,8 +16,7 @@ import {
 } from "chart.js";
 import PythonDataViewer from "../components/pythonDataView";
 import ChartComponent from "../components/ChartComponent";
-import { useDispatch, useSelector } from "react-redux";
-import { setDashboardData } from "../features/dashboard/dashboardSlice";
+import {  useSelector } from "react-redux";
 import TradeBar from "../components/tradeBar";
 
 ChartJS.register(
@@ -39,8 +38,6 @@ function Trading() {
   const [tradeDetails, setTradeDetails] = useState({ date: "", price: "" });
 
   const dataAssets = useSelector((state) => state.dashboard.assets); // all the data of of assets
-  const balance = useSelector((state) => state.dashboard.balance); // 
-  const dispatch = useDispatch();
 
   const isValidTicker = (ticker) => {
     const regex = /^[A-Z]{1,5}$/;
@@ -123,8 +120,6 @@ function Trading() {
       setTradeDetails({ date: trade_date, price: trade_price });
       setFiveDaysTrend(five_days_trend_data);
       toast.success("Recommendation fetched successfully!");
-      console.log("dataAssets", dataAssets);
-      console.log("balance", balance);
     } catch (err) {
       console.error("Error fetching recommendation:", err);
       toast.error("Failed to fetch recommendation. Please try again later.");
@@ -139,9 +134,18 @@ function Trading() {
           name: assetGroup.ticker, // Use the ticker as the name
           price: individualAsset.price || 'N/A', // Extract price
           quantity: individualAsset.quantity || 'N/A', // Extract quantity
+          stock_id: individualAsset.stock_id,
+          price_id: individualAsset.price_id,
         }))
       )
   : [];
+
+  const tradeBarData = {
+    ticker: ticker.toUpperCase(),
+    price: tradeDetails.price,
+    date: tradeDetails.date,
+    signal: recommendation,
+  };
   return (
     <div className="trading-container bg-purple-50 h-screen flex p-4">
       <ToastContainer />
@@ -217,8 +221,9 @@ function Trading() {
                 </section>
               )}
               </div>
-            <PythonDataViewer data={pythonData} />
-            <TradeBar/>
+              {pythonData &&  <PythonDataViewer data={pythonData} /> }
+            { <TradeBar tradeBarData = {tradeBarData}/> }
+            
               </div>
           </div>
 

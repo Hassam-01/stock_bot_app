@@ -29,7 +29,7 @@ function SideBar() {
   ];
 
   return (
-    <aside className="bg-gradient-to-b from-purple-50 to-white shadow-lg w-1/5 p-6 flex flex-col justify-between">
+    <aside className="bg-gradient-to-b from-purple-50 to-white shadow-lg w-64 p-6 flex flex-col justify-between">
       {/* Header Section */}
       <div>
         <div className="text-center mb-16">

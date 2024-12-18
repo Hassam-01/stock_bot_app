@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addTrade, removeTrade } from '../features/setTrade/setTradeSlice';
+import { addTrade, emptyTrade, removeTrade } from '../features/setTrade/setTradeSlice';
 
 // Child Component for Asset Card
 const AssetCard = ({ asset, isSelected, onClick }) => (
@@ -15,13 +15,6 @@ const AssetCard = ({ asset, isSelected, onClick }) => (
     <p className="text-sm font-medium">
       Quantity: <span className="font-semibold">{asset.quantity}</span>
     </p>
-
-    {/* Hover Tooltip */}
-    <div
-      className="absolute bottom-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black text-white text-xs px-2 py-1 rounded-lg"
-    >
-      Click to {isSelected ? 'remove from' : 'add to'} trade
-    </div>
   </div>
 );
 
@@ -29,17 +22,23 @@ const AssetCard = ({ asset, isSelected, onClick }) => (
 function AssetOverview({ assets }) {
   const dispatch = useDispatch();
   const addedTrade = useSelector((state) => state.setTrade.items); // Get updated state
+  const isTradeEmpty = useSelector((state) => state.setTrade.items.length === 0); // Check trade state
+
+  // Dispatch emptyTrade ONLY when assets is empty AND trade is not already empty
+  useEffect(() => {
+    if ((!assets || assets.length === 0) && !isTradeEmpty) {
+      dispatch(emptyTrade());
+    }
+  }, [assets, isTradeEmpty, dispatch]); // Add isTradeEmpty to avoid redundant updates
 
   // Function to toggle asset selection
   const toggleAssetSelection = (asset) => {
     const isAlreadySelected = addedTrade.some((item) => item.price === asset.price);
 
     if (isAlreadySelected) {
-      // Remove if already selected
-      dispatch(removeTrade(asset));  // Dispatch remove action
+      dispatch(removeTrade(asset));
     } else {
-      // Add if not selected
-      dispatch(addTrade(asset));  // Dispatch add action
+      dispatch(addTrade(asset));
     }
   };
 
@@ -52,7 +51,7 @@ function AssetOverview({ assets }) {
             <div className="group" key={index}>
               <AssetCard
                 asset={asset}
-                isSelected={addedTrade.some((item) => item.price === asset.price)} // Always use latest addedTrade state
+                isSelected={addedTrade.some((item) => item.price === asset.price)}
                 onClick={toggleAssetSelection}
               />
             </div>

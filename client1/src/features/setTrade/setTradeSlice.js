@@ -7,15 +7,18 @@ const setTradeSlice = createSlice({
     },
     reducers: {
         addTrade: (state, action) => {
-            const { name, price, quantity } = action.payload;
-            state.items.push({ name, price, quantity });
+            const { name, price, quantity, stock_id, price_id } = action.payload;
+            state.items.push({ name, price, quantity, stock_id, price_id });
         },
         removeTrade: (state, action) => {
-            const { name } = action.payload;
-            state.items = state.items.filter(item => item.name !== name);
+            const { stock_id } = action.payload;
+            state.items = state.items.filter(item => (stock_id !== item.stock_id));
         },
+        emptyTrade: (state) => {
+            state.items = [];
+        }
     },
 });
 
-export const { addTrade, removeTrade } = setTradeSlice.actions;
+export const { addTrade, removeTrade,emptyTrade } = setTradeSlice.actions;
 export default setTradeSlice.reducer;
