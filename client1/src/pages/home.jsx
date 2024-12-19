@@ -60,6 +60,8 @@ useEffect(() => {
         name: assetGroup.ticker, // Use the ticker as the name
         price: individualAsset.price || 0, // Extract price
         quantity: individualAsset.quantity || 0, // Extract quantity
+        stock_id: individualAsset.stock_id, // Extract stock_id
+
       }))
     )
   : [];
@@ -67,12 +69,19 @@ useEffect(() => {
 
   
   // * data to be passed to activity table = activities = activities;
-  const activities = userActivities.map(activity => ({
-    date: activity.transaction_date,
-    description: activity.transaction_type,
-    quantity: activity.quantity,
-    amount: Number(activity.price) * Number(activity.quantity),
-  }));
+  const activities = userActivities.map(activity => {
+    // Find the corresponding asset from dataAssets using stock_id
+    const matchingAsset = assets.find(asset => asset.stock_id === activity.stock_id)
+      // Getting the first element from the array, since flatMap returns an array.
+
+    return {
+      date: activity.transaction_date,
+      description: activity.transaction_type,
+      quantity: activity.quantity,
+      amount: Number(activity.price) * Number(activity.quantity),
+      ticker: matchingAsset ? matchingAsset.name : 'Unknown', // Use the matched ticker or 'Unknown' if not found
+    };
+  });
   
   
   return (

@@ -10,7 +10,7 @@ const AssetCard = ({ asset, isSelected, onClick }) => (
       ${isSelected ? 'bg-purple-800 text-white' : 'bg-purple-600 text-white hover:shadow-lg'}`}
   >
     <p className="text-sm font-medium">
-      Price: <span className="font-semibold">${asset.price}</span>
+      Bought: <span className="font-semibold">${asset.price}</span>
     </p>
     <p className="text-sm font-medium">
       Quantity: <span className="font-semibold">{asset.quantity}</span>
