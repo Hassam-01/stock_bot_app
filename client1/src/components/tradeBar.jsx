@@ -1,31 +1,32 @@
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTradeDetail } from '../features/tradeDetail/tradeDetailSlice';
 
-function TradeBar({ tradeBarData }) {
+function TradeBar({ tradeBarData, assets }) {
   const { ticker, price, date, signal } = tradeBarData;
-  const [quantities, setQuantities] = useState({}); // For SELL signal
-  const [buyQuantity, setBuyQuantity] = useState(1); // For BUY signal
+  const [quantities, setQuantities] = useState({});
+  const [buyQuantity, setBuyQuantity] = useState(1);
+  const [recommendation, setRecommendation] = useState(null); // Store recommendation response
+  const [showConfirm, setShowConfirm] = useState(false); // Toggle confirm button visibility
   const dispatch = useDispatch();
-// const userId = useSelector((state) => state.userId.userId);
-    const userId = 1 ;
-  // Get the addedTrade state from Redux for SELL signal
+  const balance = useSelector((state) => state.dashboard.balance);
   const addedTrade = useSelector((state) => state.setTrade.items);
-  // Handle quantity change for SELL
+  const [totalQuantity, setTotalQuantity] = useState(0);
+  const signal_value = useSelector((state) => state.pythonData.pythonData.signal_value);
+  const userId = 1;
+
   const handleQuantityChange = (item, value) => {
     setQuantities((prev) => ({
       ...prev,
-      [item.price]: Math.min(Math.max(1, parseInt(value) || 1), item.quantity), // Ensure valid quantity
+      [item.price]: Math.min(Math.max(1, parseInt(value) || 1), item.quantity),
     }));
   };
 
-  // Handle quantity change for BUY
   const handleBuyQuantityChange = (value) => {
-    setBuyQuantity(Math.max(1, parseInt(value) || 1)); // Ensure at least 1 quantity
+    setBuyQuantity(Math.max(1, parseInt(value) || 1));
   };
 
-  // Calculate total cost for SELL signal
   const totalSellCost = addedTrade
     .reduce((total, item) => {
       const quantity = quantities[item.price] || 1;
@@ -33,37 +34,78 @@ function TradeBar({ tradeBarData }) {
     }, 0)
     .toFixed(2);
 
-  // Calculate total cost for BUY signal
   const totalBuyCost = (price * buyQuantity).toFixed(2);
 
+  useEffect(() => {
+    const total = assets.reduce((sum, asset) => sum + asset.quantity, 0);
+    setTotalQuantity(total);
+  }, [assets]);
+
   const handleExecute = async () => {
-    // /api/trade/${userId}/${signal.toLowerCase()}`
-    const sellData = addedTrade.map(item => ({
-      sellPrice: price,
-      sellQuantity: buyQuantity || 1,
-      sellDate: date,
-      sellTicker: item.name,
-      sellSignal: signal,
-      sellStockId: item.stock_id,
-      sellPriceId: item.price_id,
-    }));
-    dispatch(setTradeDetail({ stockId: sellData.sellStockId, tradePrice: sellData.sellPrice, tradeDate: sellData.sellDate, tradeQuantity: buyQuantity, tradeTicker: sellData.sellTicker, tradeSignal: sellData.sellSignal, priceId: sellData.sellPriceId })); 
-    const dataSend = signal === "SELL" ? sellData  : { price, quantity: buyQuantity, date, signal, ticker };
-    const response = await axios.post(`http://localhost:3009/api/trade/${userId}/${signal.toLowerCase()}`, {
-        dataSend,
-        });
-    console.log(response.data);
+    console.log(signal)
+    const excuteRecommendationData =
+      signal === "BUY"
+        ? {
+            stock_price: Number(price),
+            net_worth: Number(balance),
+            signal_value: Number(signal_value),
+            ticker: String(ticker).toUpperCase(),
+          }
+        : {
+            ticker: String(ticker).toUpperCase(),
+            net_worth: Number(balance),
+            stocks_owned: Number(totalQuantity),
+            purchase_price: Number(addedTrade[0]?.price || 0),
+            signal_value: Number(signal_value),
+            stock_price: Number(price),
+          };
+
+    try {
+      const tradeResponse = await axios.post(
+        `http://localhost:5000/api/trade/${signal.toLowerCase()}/recommendation`,
+        excuteRecommendationData
+      );
+      setRecommendation(tradeResponse.data); // Store the response
+      setShowConfirm(true); // Show confirm button
+    } catch (error) {
+      console.error("Error fetching recommendation:", error);
+    }
+  };
+
+  const handleConfirm = async () => {
+    const dataSend =
+      signal === "SELL"
+        ? addedTrade.map((item) => ({
+            sellPrice: price,
+            sellQuantity: buyQuantity || 1,
+            sellDate: date,
+            sellTicker: item.name,
+            sellSignal: signal,
+            sellStockId: item.stock_id,
+            sellPriceId: item.price_id,
+          }))
+        : { price, quantity: buyQuantity, date, signal, ticker };
+
+    try {
+      const response = await axios.post(
+        `http://localhost:3009/api/trade/${userId}/${signal.toLowerCase()}`,
+        { dataSend }
+      );
+      console.log(response.data);
+      setRecommendation(null); // Clear recommendation after confirming
+      setShowConfirm(false); // Hide confirm button
+    } catch (error) {
+      console.error("Error confirming trade:", error);
+    }
   };
 
   return (
     <div className="flex flex-col bg-white p-4 rounded-lg shadow-lg w-1/3 mx-auto">
-      {/* Trade Bar Label */}
       <div className="mb-4">
         <label htmlFor="quantity" className="block mb-2 text-sm font-semibold text-gray-600">
           Trade Bar: {signal}
         </label>
 
-        {/* SELL Signal: List of Assets */}
         {signal === "SELL" && (
           <div className="flex flex-col gap-2">
             {addedTrade.map((item, index) => (
@@ -87,7 +129,6 @@ function TradeBar({ tradeBarData }) {
           </div>
         )}
 
-        {/* BUY Signal: Single Asset */}
         {signal === "BUY" && (
           <div className="flex items-center justify-between space-x-4">
             <p className="text-sm text-gray-600 font-medium">
@@ -107,7 +148,6 @@ function TradeBar({ tradeBarData }) {
         )}
       </div>
 
-      {/* Total Cost */}
       <div className="mb-4 text-center">
         <span className="block text-sm font-semibold text-gray-600 mb-1">Total Cost:</span>
         <span className="text-xl font-bold text-purple-600">
@@ -115,13 +155,27 @@ function TradeBar({ tradeBarData }) {
         </span>
       </div>
 
-      {/* Execute Button */}
       <button
         onClick={handleExecute}
         className="bg-purple-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all duration-200 text-center"
       >
         Execute
       </button>
+
+      {recommendation && (
+        <div className="mt-4 p-4 bg-blue-100 rounded-lg">
+          <p className="text-sm text-blue-700 font-medium">Recommendation: {recommendation}</p>
+        </div>
+      )}
+
+      {showConfirm && (
+        <button
+          onClick={handleConfirm}
+          className="mt-2 bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 text-center"
+        >
+          Confirm
+        </button>
+      )}
     </div>
   );
 }

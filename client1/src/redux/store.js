@@ -5,6 +5,7 @@ import authReducer from '../features/authentication/authSlice'
 import dashboardReducer from '../features/dashboard/dashboardSlice'
 import tradeDetailReducer from '../features/tradeDetail/tradeDetailSlice'
 import setTradeSlice from '../features/setTrade/setTradeSlice'
+import pythonDataSlice from '../features/pyhtonData/pythonDataSlice'
 export const store = configureStore({
   reducer: {
     userId: userIdReducer,
@@ -13,5 +14,6 @@ export const store = configureStore({
     dashboard: dashboardReducer,
     tradeDetail: tradeDetailReducer,
     setTrade : setTradeSlice,
+    pythonData: pythonDataSlice,
   },
 })

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addTrade, emptyTrade, removeTrade } from '../features/setTrade/setTradeSlice';
 

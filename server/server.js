@@ -47,7 +47,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/recommendation', async (req, res) => {
   try {
-    const response = await axios.post('http://localhost:5000/api/recommendation', req.body);
+    const response = await axios.post('http://localhost:5000/api/signal/recommendation', req.body);
     res.json(response.data);
   } catch (error) {
     console.error('Error in forwarding request:', error);

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch,useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "../components/sideBar";
@@ -16,8 +17,8 @@ import {
 } from "chart.js";
 import PythonDataViewer from "../components/pythonDataView";
 import ChartComponent from "../components/ChartComponent";
-import {  useSelector } from "react-redux";
 import TradeBar from "../components/tradeBar";
+import { setPythonData } from "../features/pyhtonData/pythonDataSlice";
 
 ChartJS.register(
   CategoryScale,
@@ -33,62 +34,15 @@ function Trading() {
   const [ticker, setTicker] = useState("");
   const [recommendation, setRecommendation] = useState("");
   const [predictionData, setPredictionData] = useState([]);
-  const [pythonData, setPythonData] = useState({});
   const [fivedaystrend, setFiveDaysTrend] = useState([]);
   const [tradeDetails, setTradeDetails] = useState({ date: "", price: "" });
-
+  const dispatch = useDispatch();
   const dataAssets = useSelector((state) => state.dashboard.assets); // all the data of of assets
-
+  const pythonData = useSelector(state => state.pythonData.pythonData)
   const isValidTicker = (ticker) => {
     const regex = /^[A-Z]{1,5}$/;
     return regex.test(ticker);
   };
-
-  // const makeTrade = (signal, ticker, trade_date, trade_price) => {
-  //   if (signal === "BUY") {
-  //     const asset = dataAssets.find((asset) => asset.ticker === ticker);
-  //     // if (asset) {
-  //       const newBalance = balance - trade_price;
-  //       dispatch(
-  //         setDashboardData({
-  //           ...dataAssets,
-  //           balance: newBalance,
-  //           activities: [
-  //             ...dataAssets.activities,
-  //             {
-  //               activity: "BUY",
-  //               ticker,
-  //               quantity: 1,
-  //               price: trade_price,
-  //               date: trade_date,
-  //             },
-  //           ],
-  //         })
-  //       );
-  //     // }
-  //   } else if (signal === "SELL") {
-  //     const asset = dataAssets.find((asset) => asset.ticker === ticker);
-  //     if (asset) {
-  //       const newBalance = balance + trade_price;
-  //       dispatch(
-  //         setDashboardData({
-  //           ...dataAssets,
-  //           balance: newBalance,
-  //           activities: [
-  //             ...dataAssets.activities,
-  //             {
-  //               activity: "SELL",
-  //               ticker,
-  //               quantity: 1,
-  //               price: trade_price,
-  //               date: trade_date,
-  //             },
-  //           ],
-  //         })
-  //       );
-  //     }
-  //   }
-  // };
 
   const handleGetRecommendation = async () => {
     const upperTicker = ticker.toUpperCase();
@@ -100,7 +54,7 @@ function Trading() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/recommendation",
+        "http://localhost:5000/api/signal/recommendation",
         {
           ticker: upperTicker,
         },
@@ -116,7 +70,7 @@ function Trading() {
       setRecommendation(signal);
       // makeTrade(signal, upperTicker, trade_date, trade_price);
       setPredictionData(predictionData);
-      setPythonData(pythonData);
+      dispatch(setPythonData(pythonData))
       setTradeDetails({ date: trade_date, price: trade_price });
       setFiveDaysTrend(five_days_trend_data);
       toast.success("Recommendation fetched successfully!");
@@ -222,7 +176,7 @@ function Trading() {
               )}
               </div>
               {pythonData &&  <PythonDataViewer data={pythonData} /> }
-            { <TradeBar tradeBarData = {tradeBarData}/> }
+            { <TradeBar tradeBarData = {tradeBarData} assets={filteredAssets}/> }
             
               </div>
           </div>
