@@ -88,7 +88,7 @@ function TradeBar({ tradeBarData, assets }) {
 
     try {
       const response = await axios.post(
-        `http://localhost:3009/api/trade/${userId}/${signal.toLowerCase()}`,
+        `${process.env.REACT_APP_API_URL}/api/trade/${userId}/${signal.toLowerCase()}`,
         { dataSend }
       );
       console.log(response.data);

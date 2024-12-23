@@ -16,7 +16,7 @@ function Home() {
 useEffect(() => {
   const fetchData = async () => {
     try {
-      const response = await axios.get(`http://localhost:3009/api/dashboard/${userId}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/dashboard/${userId}`);
       // ! we are receiving total_investment and total_profit_loss from the server which is the balance
       // balance = response.data.balance.total_investment + response.data.balance.total_profit_loss;
       // assets is an array of object with tickers as keys: assets = { 'AAPL': { price: 123.45, stock_id: 1, quantity: 10, date: '2022-03-15' }, ... }

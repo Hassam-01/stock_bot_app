@@ -1,2 +1,6 @@
 /client1/node_modules/
 *.pack
+*.log
+/server/node_modules/
+*.pack
+*.log

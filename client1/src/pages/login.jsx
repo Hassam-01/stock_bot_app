@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FcGoogle } from "react-icons/fc";
+// import { FcGoogle } from "react-icons/fc";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { setUsername } from "../features/username/usernameSlice";
@@ -21,7 +21,7 @@ function Login() {
     const endpoints = isRegister ? "/api/auth/register" : "/api/auth/login";
     try {
       const response = await axios.post(
-        `http://localhost:3009${endpoints}`,
+        `${process.env.REACT_APP_API_URL+endpoints}`,
         formData
       );
 

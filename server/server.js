@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const db = knex(knexConfig.development);
 const app = express();
 app.use(cors(
-{  origin: 'http://localhost:3000', // Allow requests from your frontend
+{  origin: process.env.REACT_APP_FRONTEND_URL, // Allow requests from your frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow specific HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization'], //
   }
