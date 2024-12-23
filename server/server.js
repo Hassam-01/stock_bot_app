@@ -4,7 +4,6 @@ const knex = require('knex');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-import { supabase } from './supabase.js';
 
 const db = knex(knexConfig.development);
 const app = express();
@@ -23,11 +22,9 @@ app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   // we check if the user exists in the database
   try{
-     const { data, error } = await supabase('users').where({username}).first();
+    const user = await db('users').where({username}).first();
     // if the user does not exist, we return an error
-    // res.json(data);
-    return res.json("hello");
-    if(!data){
+    if(!user){
 
       return res.status(400).json({message: 'User Does Not Exist'});
     }
