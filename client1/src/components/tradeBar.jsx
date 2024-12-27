@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTradeDetail } from '../features/tradeDetail/tradeDetailSlice';
+import { toast } from 'react-toastify';
 
 function TradeBar({ tradeBarData, assets }) {
   const { ticker, price, date, signal } = tradeBarData;
@@ -14,8 +15,9 @@ function TradeBar({ tradeBarData, assets }) {
   const addedTrade = useSelector((state) => state.setTrade.items);
   const [totalQuantity, setTotalQuantity] = useState(0);
   const signal_value = useSelector((state) => state.pythonData.pythonData.signal_value);
-  const userId = 1;
-
+  const volatility = useSelector((state) => state.pythonData.pythonData.volatility);
+  // const userId = 1;
+  const userId = useSelector((state) => state.userId.userId);
   const handleQuantityChange = (item, value) => {
     setQuantities((prev) => ({
       ...prev,
@@ -42,7 +44,6 @@ function TradeBar({ tradeBarData, assets }) {
   }, [assets]);
 
   const handleExecute = async () => {
-    console.log(signal)
     const excuteRecommendationData =
       signal === "BUY"
         ? {
@@ -50,6 +51,7 @@ function TradeBar({ tradeBarData, assets }) {
             net_worth: Number(balance),
             signal_value: Number(signal_value),
             ticker: String(ticker).toUpperCase(),
+            volatility: Number(volatility),
           }
         : {
             ticker: String(ticker).toUpperCase(),
@@ -58,14 +60,15 @@ function TradeBar({ tradeBarData, assets }) {
             purchase_price: Number(addedTrade[0]?.price || 0),
             signal_value: Number(signal_value),
             stock_price: Number(price),
+            volatility: Number(volatility),
           };
 
     try {
       const tradeResponse = await axios.post(
-        `http://localhost:5000/api/trade/${signal.toLowerCase()}/recommendation`,
+        `${process.env.REACT_APP_API_URL}/trade/${signal.toLowerCase()}/recommendation`,
         excuteRecommendationData
       );
-      setRecommendation(tradeResponse.data); // Store the response
+      setRecommendation(tradeResponse.data.message); // Store the response
       setShowConfirm(true); // Show confirm button
     } catch (error) {
       console.error("Error fetching recommendation:", error);
@@ -91,9 +94,9 @@ function TradeBar({ tradeBarData, assets }) {
         `${process.env.REACT_APP_API_URL}/api/trade/${userId}/${signal.toLowerCase()}`,
         { dataSend }
       );
-      console.log(response.data);
       setRecommendation(null); // Clear recommendation after confirming
       setShowConfirm(false); // Hide confirm button
+      toast.success("Trade confirmed successfully!");
     } catch (error) {
       console.error("Error confirming trade:", error);
     }

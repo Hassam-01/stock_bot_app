@@ -10,8 +10,8 @@ import axios from 'axios';
 function Home() {
   const dispatch = useDispatch();
 
-  // const userId = useSelector((state) => state.userId.userId);
-  const userId = 1 ; 
+  const userId = useSelector((state) => state.userId.userId);
+  // const userId = 1 ; 
 
 useEffect(() => {
   const fetchData = async () => {

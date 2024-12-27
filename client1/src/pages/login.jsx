@@ -18,7 +18,7 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const endpoints = isRegister ? "/api/auth/register" : "/api/auth/login";
+    const endpoints = isRegister ? "/auth/register" : "/auth/login";
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_API_URL+endpoints}`,
